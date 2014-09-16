@@ -18,9 +18,19 @@ module.exports = function (options) {
 		}
 
 		try {
-			options.name = typeof options.name === 'function' && options.name(file) || file.relative;
+			var context = options;
+			if(options.context) {
+				context = options.context;
+			}
 
-			file.contents = new Buffer(nunjucks.renderString(file.contents.toString(), options));
+			context.name = typeof context.name === 'function' && context.name(file) || file.relative;
+
+			if(!options.reuseEnv) {
+				file.contents = new Buffer(nunjucks.renderString(file.contents.toString(), context));
+			} else {
+				var env = new nunjucks.configure({ watch: false });
+				file.contents = new Buffer(env.renderString(file.contents.toString(), context));
+			}
 			file.path = gutil.replaceExtension(file.path, '.html');
 
 		} catch (err) {
